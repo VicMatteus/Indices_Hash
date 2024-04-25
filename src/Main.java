@@ -1,19 +1,38 @@
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.text.DecimalFormat;
+
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 public class Main
 {
 	public static void main(String[] args)
 	{
-		//TIP Press <shortcut actionId="ShowIntentionActions"/> with your caret at the highlighted text
-		// to see how IntelliJ IDEA suggests fixing it.
-		System.out.println("Hello and welcome!");
+		int chave = 2000;
+		int profundidade = 3;
+		int indiceHash = chave & ((1 << profundidade) - 1);
 		
-		for(int i = 1; i <= 5; i++)
-		{
-			//TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-			// for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
-			System.out.println("i = " + i);
-		}
+		DecimalFormat df = new DecimalFormat("000");
+		
+		Diretorio dir = new Diretorio(3);
+		
+		System.out.println("Chave: " + chave);
+		System.out.println("Profundidade: " + profundidade);
+		System.out.println("Índice do bucket: " + indiceHash);
+		System.out.println("Índice em binário: " + Integer.toBinaryString(indiceHash));
+//		try
+//		{
+//			Bucket bucket = new Bucket("c:/SGBD/teste.txt");
+//
+//			for(Registro registro : bucket.getRegistros())
+//			{
+//				System.out.println(registro);
+//			}
+//		}
+//		catch(IOException e)
+//		{
+//			throw new RuntimeException(e);
+//		}
 	}
-	
 }
