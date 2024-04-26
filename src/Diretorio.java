@@ -1,4 +1,6 @@
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -41,6 +43,7 @@ public class Diretorio
 	
 	public void inlcuirRegistro(Registro registro) throws IOException
 	{
+		String retorno = "";
 		//esse valor vai me indicar qual referencia acessar
 		String index = hash(registro.getConteudo());
 		//Busco nas refs de bucket pelo 'indice' resultado do h(key).
@@ -54,6 +57,7 @@ public class Diretorio
 		{
 			//Realizo a escrita da linha no arquivo
 			bucket.addRegister(registro);
+			retorno = "INC:"+registro.getConteudo()+"/"+this.globalDepth+","+bucketAux.getLocalDepth()+"\n";
 		}
 		else
 		{
@@ -97,7 +101,9 @@ public class Diretorio
 			
 			moveRegistroAux.add(registro);
 			bucket.setRegistros(moveRegistroAux);
+			retorno = "INC:"+registro.getConteudo()+"/"+this.globalDepth+","+bucketAux.getLocalDepth()+"\n";
 		}
+		gravarOutput(retorno);
 	}
 	
 	//Aplica o hash e retorna a String contendo os últimos digitos mais significativos baseado na profundidade
@@ -153,4 +159,60 @@ public class Diretorio
 		}
 		return new BucketReference("", 0, "", false);
 	}
+	
+	public void buscaIgualdade(String chaveAlvo) throws IOException
+	{
+//		String indice = df.format(Integer.parseInt(hash(chaveAlvo)));
+		String indice = hash(chaveAlvo);
+		String retorno = "";
+		int tuplasSelecionadas = 0;
+		
+		BucketReference br = buscarReferencia(indice);
+		Bucket bucket = new Bucket(br.getPath());
+		
+		for(Registro registro : bucket.getRegistros())
+		{
+			if(registro.getConteudo().equals(chaveAlvo))
+			{
+				tuplasSelecionadas++;
+			}
+		}
+		retorno += "BUS:" + chaveAlvo + "/" + tuplasSelecionadas;
+		gravarOutput(retorno);
+	}
+	
+	public void rmRegistro(String chaveAlvo) throws IOException
+	{
+		String indice = hash(chaveAlvo);
+		String retorno = "";
+		int tuplasSelecionadas = 0;
+		
+		BucketReference br = buscarReferencia(indice);
+		Bucket bucket = new Bucket(br.getPath());
+		ArrayList<Registro> registros = new ArrayList<Registro>();
+		
+		for(Registro registro : bucket.getRegistros())
+		{
+			if(!registro.getConteudo().equals(chaveAlvo))
+			{
+				registros.add(registro);
+			}
+			else
+				tuplasSelecionadas++;
+		}
+		bucket.setRegistros(registros);
+		retorno += "REM:" + chaveAlvo + "/" + tuplasSelecionadas +","+ this.globalDepth +","+ br.getLocalDepth();
+		gravarOutput(retorno);
+	}
+	
+	public void gravarOutput(String conteudo) throws IOException
+	{
+		FileWriter arquivo = new FileWriter("C:/SGBD/out.txt", true);
+		PrintWriter escritor = new PrintWriter(arquivo, true);
+		
+		escritor.write(conteudo+"\n");
+		
+		arquivo.close();
+	}
 }
+
