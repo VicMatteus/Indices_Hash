@@ -7,10 +7,13 @@ public class BucketReference
 	
 	public BucketReference(String path, int localDepth, String indice, boolean ativo)
 	{
-		this.path = path + "/"+indice+".txt";
 		this.localDepth = localDepth;
 		this.indice = indice;
 		this.ativo = ativo;
+		if(ativo)
+			this.path = path + "/"+indice+".txt";
+		else
+			this.path = path;
 	}
 	
 	public String getPath()
@@ -46,6 +49,7 @@ public class BucketReference
 	{
 		this.ativo = true;
 		this.localDepth = localDepth+1;
+		this.path = path.substring(0, 8) + this.indice+".txt";
 	}
 	
 }

@@ -32,7 +32,7 @@ public class Main
 		
 		DecimalFormat df = new DecimalFormat("000");
 		
-		Diretorio dir = new Diretorio(3);
+		Diretorio dir = new Diretorio(2);
 		
 		boolean x = false;
 		if (x)
@@ -51,11 +51,9 @@ public class Main
 		dir.inlcuirRegistro(new Registro(Integer.toString(1), Integer.toString(1998)));
 		dir.inlcuirRegistro(new Registro(Integer.toString(2), Integer.toString(2024)));
 		dir.inlcuirRegistro(new Registro(Integer.toString(3), Integer.toString(1995)));
-
 		dir.inlcuirRegistro(new Registro(Integer.toString(4), Integer.toString(2012)));
 		dir.inlcuirRegistro(new Registro(Integer.toString(5), Integer.toString(2007)));
 		dir.inlcuirRegistro(new Registro(Integer.toString(6), Integer.toString(1992)));
-
 		dir.inlcuirRegistro(new Registro(Integer.toString(7), Integer.toString(2020)));
 		dir.inlcuirRegistro(new Registro(Integer.toString(8), Integer.toString(2013)));
 		dir.inlcuirRegistro(new Registro(Integer.toString(9), Integer.toString(2013)));
