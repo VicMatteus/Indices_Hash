@@ -4,7 +4,6 @@ import java.util.ArrayList;
 public class Bucket
 {
 	private String path;
-//	private ArrayList<String> registros;
 	private ArrayList<Registro> registros = new ArrayList<Registro>();
 	
 	public Bucket(String path) throws IOException
@@ -47,25 +46,27 @@ public class Bucket
 	{
 		return registros;
 	}
-//	public void setRegistros(ArrayList<String> registros)
-//	{
-//		this.registros = registros;
-//	}
+	public void setRegistros(ArrayList<Registro> registros) throws IOException
+	{
+		this.registros = registros;
+		gravarArquivo();
+	}
 	
 	//A informação que ficará no bucket terá o seguinte formato
 	//index na tabela de origem, ano(chave de busca)
 	
 	//Primeiro tem que buscar o arquivo, ler para memória
-	public void incluir(String chave) throws IOException
+	
+	//função que fará a gravação dos registros no arquivo.
+	public void gravarArquivo() throws IOException
 	{
-		int i = 1;
-		FileWriter arquivo = new FileWriter("d:\\tabuada.txt");
-		PrintWriter gravarArq = new PrintWriter(arquivo);
+		FileWriter arquivo = new FileWriter(this.path);
+		PrintWriter escritor = new PrintWriter(arquivo);
 		
-		gravarArq.printf("+--Resultado--+%n");
-
-		gravarArq.printf("+-------------+%n");
-		
+		for(Registro registro : this.registros)
+		{
+			escritor.printf(registro.toString()+"\n");
+		}
 		arquivo.close();
 	}
 
@@ -113,9 +114,15 @@ public class Bucket
 	}
 	
 	//Função usada para adicionar um elemento no bucket
-	private void addElemento(String novoRegistro)
+	public void addRegister(Registro registro) throws IOException
 	{
-	
-//		this.getRegistros().add(novoRegistro);
+		this.registros.add(registro);
+		gravarArquivo();
+	}
+	//Função usada para remover um elemento no bucket
+	public void rmRegister(Registro registro) throws IOException
+	{
+		this.registros.remove(registro);
+		gravarArquivo();
 	}
 }
