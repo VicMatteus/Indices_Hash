@@ -34,7 +34,7 @@ public class Main
 		
 		Diretorio dir = new Diretorio(3);
 		
-		boolean x = true;
+		boolean x = false;
 		if (x)
 		{
 			for(Registro rg : registros)
@@ -43,22 +43,27 @@ public class Main
 			}
 		}
 		
-		dir.inlcuirRegistro(new Registro("11", "1992"));
-		dir.buscaIgualdade("1992");
-		dir.rmRegistro("1992");
-		dir.inlcuirRegistro(new Registro("11", "1992"));
+//		dir.inlcuirRegistro(new Registro("11", "1992"));
+//		dir.buscaIgualdade("1992");
+//		dir.rmRegistro("1992");
+//		dir.inlcuirRegistro(new Registro("11", "1992"));
 		
-//		dir.inlcuirRegistro(new Registro(Integer.toString(1), Integer.toString(1998)));
-//		dir.inlcuirRegistro(new Registro(Integer.toString(2), Integer.toString(2024)));
-//		dir.inlcuirRegistro(new Registro(Integer.toString(3), Integer.toString(1995)));
-//
-//		dir.inlcuirRegistro(new Registro(Integer.toString(4), Integer.toString(2012)));
-//		dir.inlcuirRegistro(new Registro(Integer.toString(5), Integer.toString(2007)));
-//		dir.inlcuirRegistro(new Registro(Integer.toString(6), Integer.toString(1992)));
-//
-//		dir.inlcuirRegistro(new Registro(Integer.toString(7), Integer.toString(2020)));
-//		dir.inlcuirRegistro(new Registro(Integer.toString(8), Integer.toString(2013)));
-//		dir.inlcuirRegistro(new Registro(Integer.toString(9), Integer.toString(2013)));
-//		dir.inlcuirRegistro(new Registro(Integer.toString(10), Integer.toString(2005)));
+		dir.inlcuirRegistro(new Registro(Integer.toString(1), Integer.toString(1998)));
+		dir.inlcuirRegistro(new Registro(Integer.toString(2), Integer.toString(2024)));
+		dir.inlcuirRegistro(new Registro(Integer.toString(3), Integer.toString(1995)));
+
+		dir.inlcuirRegistro(new Registro(Integer.toString(4), Integer.toString(2012)));
+		dir.inlcuirRegistro(new Registro(Integer.toString(5), Integer.toString(2007)));
+		dir.inlcuirRegistro(new Registro(Integer.toString(6), Integer.toString(1992)));
+
+		dir.inlcuirRegistro(new Registro(Integer.toString(7), Integer.toString(2020)));
+		dir.inlcuirRegistro(new Registro(Integer.toString(8), Integer.toString(2013)));
+		dir.inlcuirRegistro(new Registro(Integer.toString(9), Integer.toString(2013)));
+		dir.inlcuirRegistro(new Registro(Integer.toString(10), Integer.toString(2005)));
+		dir.inlcuirRegistro(new Registro(Integer.toString(11), Integer.toString(2021)));
+		dir.inlcuirRegistro(new Registro(Integer.toString(12), Integer.toString(0)));
+		dir.inlcuirRegistro(new Registro(Integer.toString(13), Integer.toString(0)));
+		dir.inlcuirRegistro(new Registro(Integer.toString(14), Integer.toString(8)));
+		
 	}
 }

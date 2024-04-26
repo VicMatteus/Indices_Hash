@@ -29,7 +29,7 @@ public class BucketReference
 	{
 		this.localDepth = localDepth;
 	}
-	public void incrementLocalDepth(){ this.localDepth = this.localDepth++; }
+	public void incrementLocalDepth(){ this.localDepth = this.localDepth+1; }
 	public String getIndice()
 	{
 		return indice;
@@ -45,7 +45,7 @@ public class BucketReference
 	public void ativar()
 	{
 		this.ativo = true;
-		this.localDepth = localDepth++;
+		this.localDepth = localDepth+1;
 	}
 	
 }
