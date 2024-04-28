@@ -45,10 +45,10 @@ public class BucketReference
 	{
 		return ativo;
 	}
-	public void ativar()
+	public void ativar(int depth)
 	{
 		this.ativo = true;
-		this.localDepth = localDepth+1;
+		this.localDepth = depth;
 		this.path = path.substring(0, 8) + this.indice+".txt";
 	}
 	

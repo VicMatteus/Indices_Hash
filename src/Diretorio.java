@@ -4,6 +4,7 @@ import java.io.PrintWriter;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.GregorianCalendar;
 /*
 	Ao incluir, o diretório irá passar o hash, avaliar os últimos bits do resultado do hash,
 	verificar no BucketReferencs a qual BucketReferences.getIndice() o registro deve ser inserido.
@@ -99,10 +100,10 @@ public class Diretorio
 			
 			String nextBucketIndex = "1"+previousFullBucketIndex.substring(previousFullBucketIndex.length()-previousFullBucketDepth);
 			
-			//Adiciono o arquivo do bucket nas referências e ativo ele
-			addBucket(formatarStringBinaria(nextBucketIndex));
 			//Após inserir um novo bucket, o bucket de origem deve ter sua profundidade incrementada
 			bucketRef.incrementLocalDepth();
+			//Adiciono o arquivo do bucket nas referências e ativo ele
+			addBucket(formatarStringBinaria(nextBucketIndex), bucketRef.getLocalDepth());
 			
 			//listas auxiliares que serão usadas para redistribuir elementos do bucket com o bucket novo.
 			ArrayList<Registro> remainRegisters = new ArrayList<Registro>();
@@ -132,24 +133,29 @@ public class Diretorio
 			else
 			{
 				//A função está horrível. preciso refatorar.
-				//duplicarBuckets(bucket, bucketRef, previousIndex, register);
+				//Caso ela entre aqui, significa dizer que o antigo continua cheio.
+				duplicarBuckets(bucket, bucketRef, formatarStringBinaria(nextBucketIndex), register, remainRegisters);
+//				inlcuirRegistro(register);
+				return;
 			}
-			//Procuro a referencia do bucket para o novo índice
-			bucketRef = buscarReferencia(formatarStringBinaria(nextBucketIndex));
-			
-			//Trago o novo bucket para a memória
-			bucket = new Bucket(bucketRef.getPath());
 			
 			//Revalido se a quantidade de registros está permitida para o bucket
 			if(moveRegisters.size() < 3)
 			{
+				//Procuro a referencia do bucket para o novo índice
+				bucketRef = buscarReferencia(formatarStringBinaria(nextBucketIndex));
+				
+				//Trago o novo bucket para a memória
+				bucket = new Bucket(bucketRef.getPath());
+				
 				//Realizo a escrita da linha no arquivo
 				bucket.setRegistros(moveRegisters);
 				retorno = "INC:"+register.getConteudo()+"/"+this.globalDepth+","+bucketRef.getLocalDepth()+"\n";
 			}
 			else
 			{
-				retorno = "Erro na inclusão. Seria necessário duplicar os buckets mais uma vez.";
+				duplicarBuckets(bucket, bucketRef, formatarStringBinaria(nextBucketIndex), register, moveRegisters);
+				retorno = "Foi necessário duplicar os buckets mais de uma vez.";
 				System.out.println(retorno);
 			}
 		}
@@ -157,67 +163,76 @@ public class Diretorio
 		gravarOutput(retorno);
 	}
 	
-	private void duplicarBuckets(Bucket bucket, BucketReference bucketRef, String index, Registro register) throws IOException
+	private void duplicarBuckets(Bucket bucket, BucketReference bucketRef, String index, Registro register, ArrayList<Registro> regMove) throws IOException
 	{
 		String previousIndex;
 		String indexAux;
+		String retorno;
 		//Se o bucket atual está cheio e sua profundidade é igual a do diretório, não posso duplica-lo sem ter sua referencia, então duplico o diretório.
 		if(bucketRef.getLocalDepth() == this.globalDepth)
 		{
 			duplicarDiretorio();
 			//Atualiza o hash com os digitos significativos para a nova profundidade
 			previousIndex = index;//index anterior a atualização da profundidade global
-			
+
 			//index anterior a atualização, sendo atualizado com o global.
-			index = hash(register.getConteudo());//pode ser q o registro que eu queira inserir tenha o mesmo hash. como identificar o indice do
-			// que eu acabei de dobrar?
+			index = hash(register.getConteudo());
 		}
 		else
 			previousIndex = index;
-		
+
 		//Esse cara é o índice do bucket que está cheio, precisando se dividir.
-		String previousFullBucketIndex = bucketRef.getIndice();
-		
+		String previousFullBucketIndex = index;
+
 		//Esse cara é o número de bits que devem ser levados em consideração no indice...
 		int previousFullBucketDepth = bucketRef.getLocalDepth();
-		
+
 		String nextBucketIndex = "1"+previousFullBucketIndex.substring(previousFullBucketIndex.length()-previousFullBucketDepth);
-		
-		//Adiciono o arquivo do bucket nas referências e ativo ele
-		addBucket(formatarStringBinaria(nextBucketIndex));
+
 		//Após inserir um novo bucket, o bucket de origem deve ter sua profundidade incrementada
-		bucketRef.incrementLocalDepth();
+		buscarReferencia(index).incrementLocalDepth();
+		//Adiciono o arquivo do bucket nas referências e ativo ele
+		addBucket(formatarStringBinaria(nextBucketIndex), buscarReferencia(index).getLocalDepth());
+		
 		
 		//listas auxiliares que serão usadas para redistribuir elementos do bucket com o bucket novo.
 		ArrayList<Registro> remainRegisters = new ArrayList<Registro>();
 		ArrayList<Registro> moveRegisters   = new ArrayList<Registro>();
 		
 		//Redistribui os registros do bucket antigo.
-		for(Registro rg : bucket.getRegistros())
+		for(Registro rg : regMove)
 		{
 			//Faço o hash novamente para cada registro do bucket antigo, para identificar se ele fica no bucket em que está ou se vai para o novo.
-			indexAux = hash(rg.getConteudo(), bucketRef.getLocalDepth());
-			
+			indexAux = hash(rg.getConteudo(), buscarReferencia(index).getLocalDepth());
+
 			//Se o índice do elemento atual não for igual ao índice do novo elemento (que precisou do novo bucket), ele fica no bucket que está
 			if(indexAux.equals(previousIndex))
 				remainRegisters.add(rg);
 			else
 				moveRegisters.add(rg);
 		}
-		//Enquanto tenho a referencia do bucket cheio, atualizo os registros REHASHEDS dele
-		if(hash(register.getConteudo(), bucketRef.getLocalDepth()).equals(previousIndex))
-			remainRegisters.add(register);
-		else
-			moveRegisters.add(register); //Podem estar 4 nesse momento, caso, na duplicação, todos os registraos tenham vindo para esse bucket novo
 		
-		bucket.setRegistros(remainRegisters);
+		
+		if(remainRegisters.size() < 3)
+		{
+			bucket = new Bucket(buscarReferencia(index).getPath());
+			bucket.setRegistros(remainRegisters);
+		}
+		else
+		{
+			//A função está horrível. preciso refatorar.
+			//Caso ela entre aqui, significa dizer que o antigo continua cheio.
+			duplicarBuckets(bucket, bucketRef, formatarStringBinaria(nextBucketIndex), register, remainRegisters);
+			//				inlcuirRegistro(register);
+			return;
+		}
 		
 		//Procuro a referencia do bucket para o novo índice
 		bucketRef = buscarReferencia(formatarStringBinaria(nextBucketIndex));
-		
+
 		//Trago o novo bucket para a memória
 		bucket = new Bucket(bucketRef.getPath());
-		
+
 		//Revalido se a quantidade de registros está permitida para o bucket
 		if(moveRegisters.size() < 3)
 		{
@@ -227,6 +242,7 @@ public class Diretorio
 		}
 		else
 		{
+			duplicarBuckets(bucket, bucketRef, formatarStringBinaria(nextBucketIndex), register, moveRegisters);
 			retorno = "Erro na inclusão. Seria necessário duplicar os buckets mais uma vez.";
 			System.out.println(retorno);
 		}
@@ -266,10 +282,10 @@ public class Diretorio
 	}
 	
 	//Busca a referência previamente estabelecida com a duplicação de diretório e a ativa, aumentando a profundidade local e setando como ativo.
-	private void addBucket(String indexAux) throws IOException
+	private void addBucket(String indexAux, int depth) throws IOException
 	{
 		BucketReference br = buscarReferencia(indexAux);//transforma binário em decimal
-		br.ativar();
+		br.ativar(depth);
 	}
 	
 	//Busca nas referencias do diretório por uma que atenda ao indice alvo e retorna a referencia.
