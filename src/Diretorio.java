@@ -156,6 +156,7 @@ public class Diretorio
 			{
 				duplicarBuckets(bucket, bucketRef, formatarStringBinaria(nextBucketIndex), register, moveRegisters);
 //				retorno = "Foi necessário duplicar os buckets mais de uma vez.";
+//				retorno = "DUP_DIR:";
 				System.out.println(retorno);
 			}
 		}
@@ -239,6 +240,8 @@ public class Diretorio
 			//Realizo a escrita da linha no arquivo
 			bucket.setRegistros(moveRegisters);
 			retorno = "INC:"+register.getConteudo()+"/"+this.globalDepth+","+bucketRef.getLocalDepth()+"\n";
+			retorno += "DUP_DIR:"+this.globalDepth+","+bucketRef.getLocalDepth()+"\n";
+			gravarOutput(retorno);
 		}
 		else
 		{
