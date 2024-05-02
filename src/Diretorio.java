@@ -48,7 +48,7 @@ public class Diretorio
 	{
 		return bucketReferences;
 	}
-	
+	public int getGlobalDepth() { return this.globalDepth; }
 		
 	public void inlcuirRegistro(Registro register) throws IOException
 	{
@@ -155,7 +155,7 @@ public class Diretorio
 			else
 			{
 				duplicarBuckets(bucket, bucketRef, formatarStringBinaria(nextBucketIndex), register, moveRegisters);
-				retorno = "Foi necessário duplicar os buckets mais de uma vez.";
+//				retorno = "Foi necessário duplicar os buckets mais de uma vez.";
 				System.out.println(retorno);
 			}
 		}
@@ -213,7 +213,7 @@ public class Diretorio
 		}
 		
 		
-		if(remainRegisters.size() < 3)
+		if(remainRegisters.size() < 4)
 		{
 			bucket = new Bucket(buscarReferencia(index).getPath());
 			bucket.setRegistros(remainRegisters);
@@ -234,7 +234,7 @@ public class Diretorio
 		bucket = new Bucket(bucketRef.getPath());
 
 		//Revalido se a quantidade de registros está permitida para o bucket
-		if(moveRegisters.size() < 3)
+		if(moveRegisters.size() < 4)
 		{
 			//Realizo a escrita da linha no arquivo
 			bucket.setRegistros(moveRegisters);
@@ -302,11 +302,19 @@ public class Diretorio
 	//Procura a h(chaveAlvo) nas referencias. Se tiver mais de uma entrada, todas serão selecionadas.
 	public void buscaIgualdade(String chaveAlvo) throws IOException
 	{
-		String indice = hash(chaveAlvo);
+		String index = hash(chaveAlvo);
 		String retorno = "";
 		int tuplasSelecionadas = 0;
+		int i = 0;
+		BucketReference br;
 		
-		BucketReference br = buscarReferencia(indice);
+		do
+		{
+			index = hash(chaveAlvo, globalDepth-i);
+			br = buscarReferencia(index);
+			i++;
+		} while(!br.isAtivo());
+		
 		Bucket bucket = new Bucket(br.getPath());
 		
 		for(Registro register : bucket.getRegistros())
@@ -321,11 +329,19 @@ public class Diretorio
 	//Procura a h(chaveAlvo) nas referencias e a remove do bucket. Se tiver mais de uma entrada, todas serão removidas.
 	public void rmRegistro(String chaveAlvo) throws IOException
 	{
-		String indice = hash(chaveAlvo);
+		String index = hash(chaveAlvo);
 		String retorno = "";
+		BucketReference br;
 		int tuplasSelecionadas = 0;
+		int i = 0;
 		
-		BucketReference br = buscarReferencia(indice);
+		do
+		{
+			index = hash(chaveAlvo, globalDepth-i);
+			br = buscarReferencia(index);
+			i++;
+		} while(!br.isAtivo());
+		
 		Bucket bucket = new Bucket(br.getPath());
 		ArrayList<Registro> registros = new ArrayList<Registro>();
 		
@@ -344,7 +360,7 @@ public class Diretorio
 	//Grava o argumento no arquivo out.txt
 	public void gravarOutput(String conteudo) throws IOException
 	{
-		FileWriter arquivo = new FileWriter("C:/SGBD/out.txt", true);
+		FileWriter arquivo = new FileWriter("C:/SGBD/inout/out.txt", true);
 		PrintWriter escritor = new PrintWriter(arquivo, true);
 		
 		escritor.write(conteudo+"\n");
