@@ -1,6 +1,9 @@
 import java.io.*;
 import java.util.ArrayList;
 
+/*
+* Possui um array de registros lidos do arquivo fisico e um caminho(ponteiro)
+*/
 public class Bucket
 {
 	private String path;
@@ -8,13 +11,14 @@ public class Bucket
 	
 	public Bucket(String path) throws IOException
 	{
+		//Valida se o arquivo existe. Se não, tenta criar.
 		if (!this.validarArquivo(path))
 		{
 			return;
 		}
 		this.path = path;
 		String[] registroAux;
-		//Para iniciar um BUCKET, é necessário passar o caminho, para que seja feita a carga do arquivo para a memória.
+		//Para iniciar um BUCKET, é necessário passar o caminho do arq físico, para que seja feita a carga do arquivo para a memória.
 		try {
 			FileReader arquivo = new FileReader(this.path);
 			BufferedReader lerArq = new BufferedReader(arquivo);

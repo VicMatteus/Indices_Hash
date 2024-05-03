@@ -5,6 +5,13 @@ public class BucketReference
 	protected int localDepth = 3;
 	private boolean ativo = false;
 	
+	/*
+	* Armazena:
+	* o caminho para o arquivo(ponteiro),
+	* profundidade local,
+	* indice de referencia,
+	* se está ativo
+	* */
 	public BucketReference(String path, int localDepth, String indice, boolean ativo)
 	{
 		this.localDepth = localDepth;
@@ -45,11 +52,20 @@ public class BucketReference
 	{
 		return ativo;
 	}
+	
+	
 	public void ativar(int depth)
 	{
 		this.ativo = true;
 		this.localDepth = depth;
 		this.path = path.substring(0, 8) + this.indice+".txt";
+	}
+	
+	public void desativar(String auxPath)
+	{
+		this.ativo = false;
+		this.localDepth = localDepth-1;
+		this.path = path.substring(0, 8) + auxPath +".txt";
 	}
 	
 }

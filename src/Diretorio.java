@@ -24,17 +24,22 @@ import java.util.GregorianCalendar;
 
 public class Diretorio
 {
+	//Diretório base onde criará a pasta com arquivos de indices, input e output.
 	protected String basePath = "C:/SGBD";
-	protected int globalDepth = 2;
+	//O diretório possui uma lista de referencias à buckets.
 	protected ArrayList<BucketReference> bucketReferences = new ArrayList<BucketReference>();
-	private   DecimalFormat df = new DecimalFormat("0000");
+	protected int globalDepth = 2;
+	//Um formatador para padronizar a quantidade de caracteres em 4.
+	private DecimalFormat df = new DecimalFormat("0000");
+	//Arranjo técnico para inversão de DUP_DIR com INC
+	private String duplicaDirMsg = "";
 	
-	//Cria 8 referências partindo de 000 a 111 e as adiciona no atributo.
+	//Cria 4 referências partindo de 00 a 11 e as adiciona no atributo.
 	public Diretorio(int globalDepth)
 	{
 		this.globalDepth = globalDepth;
 		String indexAux;
-		//Inicializo o diretório com 8 referencias de buckets de 000 a 111.
+
 		//O path de cada bucket será o basePath+indice.
 		for(int i=0; i<2*this.globalDepth; i++)
 		{
@@ -43,13 +48,102 @@ public class Diretorio
 		}
 	}
 	
-	
+	//Getters padrão
 	public ArrayList<BucketReference> getBucketReferences()
 	{
 		return bucketReferences;
 	}
 	public int getGlobalDepth() { return this.globalDepth; }
+	public String getDuplicaDirMsg()
+	{
+		return duplicaDirMsg;
+	}
+	
+	/*Funções auxiliares específicas*/
+	
+	//Aplica o hash e retorna a String contendo os últimos digitos mais significativos baseado na profundidade
+	//Retorna o binário formatado com 4 digitos.
+	public String hash(String key)
+	{
+		return df.format(Integer.parseInt(Integer.toBinaryString(Integer.parseInt(key) & (1 << globalDepth) - 1)));
+	}
+	
+	//Aplica o hash e retorna a String contendo os últimos digitos mais significativos baseado na profundidade
+	public String hash(String key, int profundidade)
+	{
+		return df.format(Integer.parseInt(Integer.toBinaryString(Integer.parseInt(key) & (1 << profundidade) - 1)));
+	}
+	
+	//Busca a referência previamente estabelecida com a duplicação de diretório e a ativa, aumentando a profundidade local e setando como ativo.
+	private void addBucket(String indexAux, int depth) throws IOException
+	{
+		BucketReference br = buscarReferencia(indexAux);//transforma binário em decimal
+		br.ativar(depth);
+	}
+	
+	//Grava o argumento no arquivo out.txt
+	public void gravarOutput(String conteudo) throws IOException
+	{
+		FileWriter arquivo = new FileWriter("C:/SGBD/inout/out.txt", true);
+		PrintWriter escritor = new PrintWriter(arquivo, true);
 		
+		escritor.write(conteudo+"\n");
+		
+		arquivo.close();
+	}
+	
+	//Retorna a conversão de um valor inteiro em uma string binária com 4 caractéres.
+	public String formatarStringBinaria(int valor)
+	{
+		return df.format(Integer.parseInt(Integer.toBinaryString(valor)));
+	}
+	//Retorna a conversão de uma string em uma string binária com 4 caractéres.
+	public String formatarStringBinaria(String valor)
+	{
+		return df.format(Integer.parseInt(valor));
+	}
+	
+	//Função retorna a profundidade loca de uma chave de busca. Faz o hash e vai da profundidade global até a menor ativa disponível. retorna a menor.
+	public String buscarLocalDepthDeChave(String chaveAlvo)
+	{
+		String index = hash(chaveAlvo);
+		String retorno = "";
+		int i = 0;
+		BucketReference br;
+		
+		do
+		{
+			index = hash(chaveAlvo, globalDepth-i);
+			br = buscarReferencia(index);
+			i++;
+		} while(!br.isAtivo());
+		return Integer.toString(br.getLocalDepth());
+	}
+	
+	//Gambi para alternar a ordem da mensagem de inclusão e duplicação de diretório
+	public String duplicouDirMsg()
+	{
+		String retorno = this.duplicaDirMsg;
+		
+		this.duplicaDirMsg = "";
+		
+		return retorno;
+	}
+	
+	
+	/*
+	* Recebe um objeto registro e faz a inclusão no bucket.
+	* - baseado na chave do registro, faz o hash para a chave global(maior) e depois vai diminuindo para ver se encontra um bucket menor ativo
+	* - após achar o bucket, instancia ele em memo
+	* - se o bucket tiver espaço, a inclusão é direta.
+	* - se não tiver espaço
+	*   ~ verifica a necessidade de duplicar o diretório, isto é, se a p.local já estiver igual a p.global
+	* - monta a string contendo o próximo indice de bucket reference que será referenciado e o ativa
+	* - incrementa a pl do bucket atual
+	* - varre o bucket atual passando o hash com o indice novo e separando que fica no bucket atual e quem vai para a próxima referencia
+	* - seta os registros que ficam no bucekt atual e seta os que vão para o próximo bucket
+	* - se os registros que ficam ou que vão forem mais do que 3, duplica os buckets.
+	* */
 	public void inlcuirRegistro(Registro register) throws IOException
 	{
 		int i = 0;
@@ -74,7 +168,7 @@ public class Diretorio
 		{
 			//Realizo a escrita da linha no arquivo
 			bucket.addRegister(register);
-			retorno = "INC:"+register.getConteudo()+"/"+this.globalDepth+","+bucketRef.getLocalDepth()+"\n";
+//			retorno = "INC:"+register.getConteudo()+"/"+this.globalDepth+","+bucketRef.getLocalDepth();
 		}
 		else
 		{
@@ -132,14 +226,13 @@ public class Diretorio
 				bucket.setRegistros(remainRegisters);
 			else
 			{
-				//A função está horrível. preciso refatorar.
-				//Caso ela entre aqui, significa dizer que o antigo continua cheio.
+				//Caso ela entre aqui, significa que o antigo continua cheio.
 				duplicarBuckets(bucket, bucketRef, formatarStringBinaria(nextBucketIndex), register, remainRegisters);
-//				inlcuirRegistro(register);
+				//Retorna, pois todos os registros foram rearranjados na função acima.
 				return;
 			}
 			
-			//Revalido se a quantidade de registros está permitida para o bucket
+			//Revalido se a quantidade de registros está permitida para o bucket novo
 			if(moveRegisters.size() < 3)
 			{
 				//Procuro a referencia do bucket para o novo índice
@@ -150,20 +243,21 @@ public class Diretorio
 				
 				//Realizo a escrita da linha no arquivo
 				bucket.setRegistros(moveRegisters);
-				retorno = "INC:"+register.getConteudo()+"/"+this.globalDepth+","+bucketRef.getLocalDepth()+"\n";
 			}
 			else
 			{
 				duplicarBuckets(bucket, bucketRef, formatarStringBinaria(nextBucketIndex), register, moveRegisters);
-//				retorno = "Foi necessário duplicar os buckets mais de uma vez.";
-//				retorno = "DUP_DIR:";
-				System.out.println(retorno);
 			}
 		}
-		//Grava o out.txt
-		gravarOutput(retorno);
 	}
 	
+	
+	/* ex: 0001 -> 0101 -> 1101
+	* index é o indice do bucket atualmente cheio (0101)
+	* bucketRef é a referencia do bucket anterior ao bucket cheio (0001)
+	* register é o registro que causou o overflow
+	* regMove são os registros que estão no bucket cheio (0101)
+	* */
 	private void duplicarBuckets(Bucket bucket, BucketReference bucketRef, String index, Registro register, ArrayList<Registro> regMove) throws IOException
 	{
 		String previousIndex;
@@ -183,17 +277,18 @@ public class Diretorio
 			previousIndex = index;
 
 		//Esse cara é o índice do bucket que está cheio, precisando se dividir.
-		String previousFullBucketIndex = index;
+		String previousFullBucketIndex = previousIndex;
 
 		//Esse cara é o número de bits que devem ser levados em consideração no indice...
 		int previousFullBucketDepth = bucketRef.getLocalDepth();
 
+		//monta o próximo indice ao adicionar um bit "1" na frente do índice anterior -> 0101 -> 1101
 		String nextBucketIndex = "1"+previousFullBucketIndex.substring(previousFullBucketIndex.length()-previousFullBucketDepth);
 
 		//Após inserir um novo bucket, o bucket de origem deve ter sua profundidade incrementada
-		buscarReferencia(index).incrementLocalDepth();
+		buscarReferencia(previousIndex).incrementLocalDepth();
 		//Adiciono o arquivo do bucket nas referências e ativo ele
-		addBucket(formatarStringBinaria(nextBucketIndex), buscarReferencia(index).getLocalDepth());
+		addBucket(formatarStringBinaria(nextBucketIndex), buscarReferencia(previousIndex).getLocalDepth());
 		
 		
 		//listas auxiliares que serão usadas para redistribuir elementos do bucket com o bucket novo.
@@ -213,7 +308,7 @@ public class Diretorio
 				moveRegisters.add(rg);
 		}
 		
-		
+		//Se os regs. não passarem do limite, seta direto
 		if(remainRegisters.size() < 4)
 		{
 			bucket = new Bucket(buscarReferencia(index).getPath());
@@ -221,10 +316,8 @@ public class Diretorio
 		}
 		else
 		{
-			//A função está horrível. preciso refatorar.
 			//Caso ela entre aqui, significa dizer que o antigo continua cheio.
 			duplicarBuckets(bucket, bucketRef, formatarStringBinaria(nextBucketIndex), register, remainRegisters);
-			//				inlcuirRegistro(register);
 			return;
 		}
 		
@@ -239,31 +332,15 @@ public class Diretorio
 		{
 			//Realizo a escrita da linha no arquivo
 			bucket.setRegistros(moveRegisters);
-			retorno = "INC:"+register.getConteudo()+"/"+this.globalDepth+","+bucketRef.getLocalDepth()+"\n";
-			retorno += "DUP_DIR:"+this.globalDepth+","+bucketRef.getLocalDepth()+"\n";
-			gravarOutput(retorno);
+			this.duplicaDirMsg = "DUP_DIR:"+this.globalDepth+","+bucketRef.getLocalDepth();
 		}
 		else
 		{
 			duplicarBuckets(bucket, bucketRef, formatarStringBinaria(nextBucketIndex), register, moveRegisters);
-			retorno = "Erro na inclusão. Seria necessário duplicar os buckets mais uma vez.";
-			System.out.println(retorno);
+			System.out.println("Erro na inclusão. Seria necessário duplicar os buckets mais uma vez.");
 		}
 	}
 	
-	//Aplica o hash e retorna a String contendo os últimos digitos mais significativos baseado na profundidade
-	public String hash(String key)
-	{
-		//Retorna o binário formatado com 4 digitos.
-		return df.format(Integer.parseInt(Integer.toBinaryString(Integer.parseInt(key) & (1 << globalDepth) - 1)));
-	}
-	
-	//Aplica o hash e retorna a String contendo os últimos digitos mais significativos baseado na profundidade
-	public String hash(String key, int profundidade)
-	{
-		//Retorna o binário formatado com 4 digitos.
-		return df.format(Integer.parseInt(Integer.toBinaryString(Integer.parseInt(key) & (1 << profundidade) - 1)));
-	}
 	
 	//Função responsável por duplicar o diretório, dobrando suas referências e aumentando a profundidade global.
 	private void duplicarDiretorio()
@@ -276,20 +353,13 @@ public class Diretorio
 		{
 			indexAux = formatarStringBinaria(i);
 			String path = basePath +"/" + formatarStringBinaria(i%4) + ".txt";
-			//Teoricamente, duplico a quantidade de referencias apontando para os mesmos buckets correspondentes
+			//duplico a quantidade de referencias apontando para os mesmos buckets correspondentes
 			//Duplico as referencias com profundidade local mantida. Será atualizada apenas na duplicação de bucket.
 			this.bucketReferences.add(new BucketReference(path, globalDepth, indexAux, false));
 		}
 		this.globalDepth = this.globalDepth+1;
-		//df = new DecimalFormat(String.join("", Collections.nCopies(this.globalDepth, "0"))); //Acho que deixar o índice com quantidade fixa tira a necessidade disso...
 	}
 	
-	//Busca a referência previamente estabelecida com a duplicação de diretório e a ativa, aumentando a profundidade local e setando como ativo.
-	private void addBucket(String indexAux, int depth) throws IOException
-	{
-		BucketReference br = buscarReferencia(indexAux);//transforma binário em decimal
-		br.ativar(depth);
-	}
 	
 	//Busca nas referencias do diretório por uma que atenda ao indice alvo e retorna a referencia.
 	public BucketReference buscarReferencia(String indiceAlvo)
@@ -333,6 +403,7 @@ public class Diretorio
 	public void rmRegistro(String chaveAlvo) throws IOException
 	{
 		String index = hash(chaveAlvo);
+		String indexAux;
 		String retorno = "";
 		BucketReference br;
 		int tuplasSelecionadas = 0;
@@ -356,29 +427,80 @@ public class Diretorio
 				tuplasSelecionadas++;
 		}
 		bucket.setRegistros(registros);
+		
+		/*
+		* Tratar caso a exlcusão, deixe um bucket vazio
+		* caso o bucket esteja vazio, size()==0
+		*   bucket.ativo = false
+		*   bucket.path = index anterior //precisa calcular index anterior
+		*   bucket com index anterior.localDepth = -1
+		*   se bucket nenhum tiver localDepth > bucket com index anterior.localDepth = -1
+		*       globalDepth = -1
+		*   realizar rehash no bucket com index anterior com a nova localDepth
+		* */
+		
+		if(bucket.getRegistros().size() == 0 && br.getLocalDepth() > 2)
+		{
+			Boolean reduzGlobalDepth = true;
+			String indexAnterior = df.format(Integer.parseInt(br.getIndice().substring(br.getIndice().length() - br.getLocalDepth()+1)));
+			br.desativar(indexAnterior);//passo o indice para o qual o bucket desativado passará a apontar
+			
+			br = buscarReferencia(indexAnterior);
+			br.setLocalDepth(br.getLocalDepth()-1);
+			
+			for(BucketReference brAux : this.bucketReferences)
+			{
+				if(brAux.getLocalDepth() >= this.globalDepth)
+				{
+					reduzGlobalDepth = false;
+					break;
+				}
+			}
+			if(reduzGlobalDepth)
+			{
+				this.globalDepth = globalDepth-1;
+			}
+			
+			//rehash do bucket anterior
+			bucket = new Bucket(br.getPath());
+			ArrayList<Registro> remainRegisters = new ArrayList<Registro>();
+			ArrayList<Registro> moveRegisters   = new ArrayList<Registro>();
+			
+			//Redistribui os registros do bucket antigo.
+			for(Registro rg : bucket.getRegistros())
+			{
+				//Faço o hash novamente para cada registro do bucket atual para identificar se ele fica no bucket em que está ou se vai para o anterior
+				indexAux = hash(rg.getConteudo(), br.getLocalDepth());
+				
+				//Se o índice do elemento atual for igual ao índice do bucket atual, ele fica no bucket que está
+				if(indexAux.equals(indexAnterior))
+					remainRegisters.add(rg);
+				else
+					moveRegisters.add(rg);
+			}
+			//seto os registros na br que estou no momento, verifico se é maior que zero, se não for, chamo a função de novo
+			if(remainRegisters.size() != 0)
+			{
+				bucket.setRegistros(remainRegisters);
+			}
+			else
+			{
+				System.out.println("Necessário remover mais um nível de diretório");
+			}
+			
+			indexAnterior = df.format(Integer.parseInt(br.getIndice().substring(br.getIndice().length() - br.getLocalDepth()+1)));
+			bucket = new Bucket(buscarReferencia(indexAnterior).getPath());
+			for(Registro rg : bucket.getRegistros())
+			{
+				moveRegisters.add(rg);
+			}
+			if(moveRegisters.size() < 4)
+				bucket.setRegistros(moveRegisters);
+			else
+				System.out.println("Seria necessário duplicar o bucket: " + indexAnterior);
+			
+		}
 		retorno += "REM:" + chaveAlvo + "/" + tuplasSelecionadas +","+ this.globalDepth +","+ br.getLocalDepth();
 		gravarOutput(retorno);
-	}
-	
-	//Grava o argumento no arquivo out.txt
-	public void gravarOutput(String conteudo) throws IOException
-	{
-		FileWriter arquivo = new FileWriter("C:/SGBD/inout/out.txt", true);
-		PrintWriter escritor = new PrintWriter(arquivo, true);
-		
-		escritor.write(conteudo+"\n");
-		
-		arquivo.close();
-	}
-	
-	//Retorna a conversão de um valor inteiro em uma string binária com 4 caractéres.
-	public String formatarStringBinaria(int valor)
-	{
-		return df.format(Integer.parseInt(Integer.toBinaryString(valor)));
-	}
-	//Retorna a conversão de um valor inteiro em uma string binária com 4 caractéres.
-	public String formatarStringBinaria(String valor)
-	{
-		return df.format(Integer.parseInt(valor));
 	}
 }
